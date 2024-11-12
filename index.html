@@ -310,7 +310,7 @@
 
 
 
-<!--section class="section" id="examples">
+<section class="section" id="examples">
   <div class="container is-max-desktop">
     <div class="columns is-centered has-text-centered">
       <div class="column is-full">
@@ -328,9 +328,9 @@
             <source id="video-source" src="" type="video/mp4">
           </video>
 
-          <p class="has-text-weight-bold" style="color: #4682b4;">Discipline: <span id="discipline" style="color: #4682b4;"></span></p>
-          <p class="has-text-weight-bold" style="color: #ff69b4;">Subdiscipline: <span id="subdiscipline" style="color: #ff69b4;"></span></p>
-          <p class="has-text-weight-bold" style="color: #66cdaa;">Question: <span id="question" style="color: #66cdaa;"></span></p>
+          <p class="has-text-weight-bold" style="color: #4682b4;">Question: <span id="question" style="color: #4682b4;"></span></p>
+          <p class="has-text-weight-bold" style="color: #ff69b4;">Choices: <span id="choices" style="color: #ff69b4;"></span></p>
+          <p class="has-text-weight-bold" style="color: #66cdaa;">Ground Truth: <span id="gt" style="color: #66cdaa;"></span></p>
           <div class="select is-fullwidth" style="margin-top: 1rem;">
             <select name="video-question-answer" id="options" required="">
             </select>
@@ -339,59 +339,7 @@
       </div>
     </div>
   </div>
-</section -->
-
-<section class="section" id="examples">
-  <div class="container is-max-desktop">
-    <div class="columns is-centered has-text-centered">
-      <div class="column is-full">
-        <h2 class="title is-3">
-          <img id="painting_icon" width="5%" src="https://cdn-icons-png.flaticon.com/512/5379/5379860.png" alt="Painting Icon">
-          EgoPlan-Bench2 Examples
-        </h2>
-      </div>
-    </div>
-
-    <!-- 使用columns布局展示两个box在同一行 -->
-    <div class="columns is-centered has-text-centered">
-      <!-- 第一个box -->
-      <div class="column is-half">
-        <div id="video-container-1" class="box">
-          <video id="example-video-1" class="is-fullwidth" controls>
-            <source id="video-source-1" src="./Videos/d405ceed-68da-4e50-a0ef-5d2995a94e5d_QA-139.mp4" type="video/mp4">
-          </video>
-
-          <p class="has-text-weight-bold" style="color: #4682b4;">Scenario: Work - lab work<span id="discipline-1" style="color: #4682b4;"></span></p>
-          <p class="has-text-weight-bold" style="color: #ff69b4;">Task goal: arrange seedlings on the tray<span id="subdiscipline-1" style="color: #ff69b4;"></span></p>
-          <p class="has-text-weight-bold" style="color: #66cdaa;">Options: <b>close marker pen</b>, arrange seedlings on tray, pick seedling tray, turn tray
-            <span id="question-1" style="color: #66cdaa;"></span></p>
-          <div class="select is-fullwidth" style="margin-top: 1rem;">
-            <select name="video-question-answer" id="options-1" required="">
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <!-- 第二个box -->
-      <div class="column is-half">
-        <div id="video-container-2" class="box">
-          <video id="example-video-2" class="is-fullwidth" controls>
-            <source id="video-source-2" src="" type="video/mp4">
-          </video>
-
-          <p class="has-text-weight-bold" style="color: #4682b4;">Discipline: <span id="discipline-2" style="color: #4682b4;"></span></p>
-          <p class="has-text-weight-bold" style="color: #ff69b4;">Subdiscipline: <span id="subdiscipline-2" style="color: #ff69b4;"></span></p>
-          <p class="has-text-weight-bold" style="color: #66cdaa;">Question: <span id="question-2" style="color: #66cdaa;"></span></p>
-          <div class="select is-fullwidth" style="margin-top: 1rem;">
-            <select name="video-question-answer" id="options-2" required="">
-            </select>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
 </section>
-
 
 
 
@@ -435,7 +383,7 @@
 
 
 
-<script>
+<!--script>
   let data = [];
   let currentIndex = 0;
   const videoUrlPrefix = "https://videounderstanding.s3.us-east-2.amazonaws.com/";
@@ -482,6 +430,70 @@
       updateContent();
     }
   });
+
+  $(document).ready(function() {
+    loadCSV();
+    
+    const observer = new MutationObserver(() => {
+      const alertElement = document.querySelector('crowd-form').shadowRoot.querySelector('crowd-alert').shadowRoot.querySelector('awsui-alert');
+      if (alertElement) {
+        alertElement.style.display = 'none';
+      }
+    });
+    
+    observer.observe(document.querySelector('crowd-form').shadowRoot, { childList: true, subtree: true });
+  });
+</script -->
+
+<script>
+  let data = [];
+  const videoUrlPrefix = "https://videounderstanding.s3.us-east-2.amazonaws.com/";
+
+  function loadCSV() {
+    $.ajax({
+      type: "GET",
+      url: "./static/Videos/examples.csv",
+      dataType: "text",
+      success: function(response) {
+        data = $.csv.toObjects(response);  // 将 CSV 转换为对象数组
+        populateSelectOptions();
+      }
+    });
+  }
+
+  function populateSelectOptions() {
+    if (data.length > 0) {
+      const $select = $('#options');
+      $select.empty();
+
+      // 根据CSV文件内容填充选择项
+      data.forEach((item, index) => {
+        const optionText = item.select;  // 显示CSV中的select列内容
+        $select.append(`<option value="${index}">${optionText}</option>`);
+      });
+
+      // 设置更改事件
+      $select.on('change', function() {
+        const selectedIndex = parseInt($(this).val(), 10);
+        updateContent(selectedIndex);
+      });
+
+      // 加载初始内容
+      updateContent(0);
+    }
+  }
+
+  function updateContent(index) {
+    if (data.length > 0 && index >= 0 && index < data.length) {
+      const currentData = data[index];
+      const videoUrl = currentData["video_path"];
+      $('#video-source').attr('src', videoUrl);
+      $('#example-video')[0].load();
+      $('#question').text(currentData.question);
+      $('#choices').text(currentData.options);
+      $('#gt').text(currentData.label);
+    }
+  }
 
   $(document).ready(function() {
     loadCSV();
